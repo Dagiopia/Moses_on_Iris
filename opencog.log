@@ -1,0 +1,26 @@
+[2017-02-05 10:05:45:949] [ERROR] Fatal error: invalid or duplicated argument:
+	the required argument for option '--temperature' is missing
+ (/home/dagiopia/opencog/moses/moses/moses/main/problem.cc:66)
+	Stack Trace:
+	2: basic_string.h:293	  std::string::_M_data() const
+	3: Logger.cc:493	  opencog::Logger::Error::operator()(char const*, ...)
+	4: exceptions.cc:310	  opencog::AssertionException::AssertionException(char const*, __va_list_tag*)
+	5: oc_assert.cc:45	  opencog::cassert(char const*, bool, char const*, ...)
+	6: problem.cc:65	  opencog::moses::option_manager::parse_options(int, char**)
+	7: moses_exec.cc:53	  opencog::moses::moses_exec(int, char**)
+	8: libc-start.c:321	__libc_start_main()
+	9: ??:0	_start()
+
+[2017-02-05 10:05:50:509] [ERROR] Fatal error: invalid or duplicated argument:
+	unrecognised option '--verbose'
+ (/home/dagiopia/opencog/moses/moses/moses/main/problem.cc:66)
+	Stack Trace:
+	2: basic_string.h:293	  std::string::_M_data() const
+	3: Logger.cc:493	  opencog::Logger::Error::operator()(char const*, ...)
+	4: exceptions.cc:310	  opencog::AssertionException::AssertionException(char const*, __va_list_tag*)
+	5: oc_assert.cc:45	  opencog::cassert(char const*, bool, char const*, ...)
+	6: problem.cc:65	  opencog::moses::option_manager::parse_options(int, char**)
+	7: moses_exec.cc:53	  opencog::moses::moses_exec(int, char**)
+	8: libc-start.c:321	__libc_start_main()
+	9: ??:0	_start()
+
