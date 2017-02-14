@@ -2,6 +2,9 @@
 
 import numpy as np
 import os
+from pymoses import moses
+import time
+import sys
 
 '''
 Construct test cases with the following set random indices
@@ -16,7 +19,10 @@ test_indices = {"Iris-setosa" : [20,34,30,28,32,26,0,5,4,15,24,45,19,33,47,46,13
 "Iris-versicolor" : [10,12,27,9,43,19,6,31,3,46,18,21,24,44,11,14,35], 
 "Iris-virginica" : [27,31,4,48,32,13,46,24,45,20,26,44,38,34,49,5,12]}
 
-NO_BINS = 4
+NO_BINS = 3
+NO_FEATURES = 4
+NO_ITER = 20000
+classes = []
 
 def binization(data):
 	'''
@@ -61,7 +67,7 @@ def binization(data):
 		since this second method works for whatever min value (even 0) it is used.
 		
 		come to think of it's actually better because now the range of each bin is
-		reduced or has more resolution.
+		reduced (or has more resolution).
 		For example for min = 1, max = 4 and BIN_NO = 3
 
 		FIRST METHOD BINS:
@@ -79,7 +85,17 @@ def binization(data):
 		After this, the range of values for binization of each feature are stored
 		in 2D array.
 
-		Third,
+		Third, iterate over each observation and assign in which bin number it belongs
+		i.e. if it's in the range of the first and second values in the ranges list, 
+		then assign 0 to it if it's in the range of the second and third values then
+		assign 1 to it and so on so on. 
+
+		Fourth the data generated from the thrid step is taken and an array of 0s is 
+		created that has NO_BINS * NO_FEATURES (i.e. if bin number is 3 and there are
+		4 features to every observation, the array would be 12 in size)
+		So each feature is expanded to the number of bins. 
+		This is the data that is trained, tested and pridicted on. 
+		This is all the preprocessing performed here before feeding moses. 
 	'''
 
 
@@ -92,8 +108,10 @@ def binization(data):
 		maxs.append(max(dt[i]))
 		mins.append(min(dt[i]))
 	#maxs is right - verified
-	#print "Max of each category:"
-	#print maxs
+	print "Max of each category:"
+	print maxs
+	print "Min of each category:"
+	print mins
 
 	bin_dic = []
 	for j in range(width):
@@ -102,8 +120,8 @@ def binization(data):
 			t_dic.append(mins[j] + ((maxs[j] - mins[j]) / float(NO_BINS))*i)
 		bin_dic.append(t_dic)
 
-	print bin_dic
-	print bin_dic[0]
+	print "\nBin Ranges: \n" + str(bin_dic).replace('], ', '],\n')
+	#print bin_dic[0]
 
 	#start binization
 	n_data = []
@@ -119,7 +137,49 @@ def binization(data):
 		n_data.append(d)
 	print n_data
 	np.savetxt('binized_iris.csv', n_data, fmt='%d', delimiter=',')
-	return n_data
+
+
+	#another method
+	e_data = []
+	
+	for c in [0, 1, 2]:
+		cc = []
+		for n in n_data:
+			m = list(n)
+			if m[0] == c:
+				#if current class matches the target class
+				#print "They Equal =" + str(m[0]) + "+" + str(c)
+				m[0] = 1
+			else:
+				#print "Unequal =" + str(m[0]) + "+" + str(c)
+				m[0] = 0
+			cc.append(m)
+		print "-----"
+		e_data.append(cc)
+		np.savetxt('binized_class_'+classes[c]+'.csv', cc, fmt='%d', delimiter=',')
+
+	ex_data = [] #expanded bin (in the form [0, 0, 0, 1 ....])
+	for c in [0, 1, 2]:
+		cc = []
+		for n in n_data:
+			m = list(n)
+			e_x_m = []
+			m[0] = 1 if m[0] == c else 0
+			e_x_m.append(m[0])
+			for i in range(NO_BINS*NO_FEATURES):
+				e_x_m.append(0)
+			for i in range(1, len(m)):
+				e_x_m[((NO_BINS * (i-1)) + m[i])+1] = 1
+			cc.append(e_x_m)
+		ex_data.append(cc)
+		np.savetxt('good_binned_class_'+classes[c]+'.csv', cc, fmt='%d', delimiter=',')
+
+
+
+	print "---------------------------------"
+	print "Binned: \n" + str(ex_data)
+	print "---------------------------------"
+	return ex_data
 
 
 
@@ -128,77 +188,155 @@ def binization(data):
 
 
 if __name__ == "__main__":
-	FILE = open("Iris.txt", "r")
-	data = []
-	for line in FILE:
-		data.append(line)
+	if len(sys.argv) == 2:
+		NO_BINS = int(sys.argv[1])
+		#NO_ITER = int(sys.argv[2])
+		print "**STARTING PROGRAM**"
+		print "Time: %s" % time.ctime(time.time())
+		print "Number of Iterations = \t%d" % NO_ITER
+		print "Number of Bins: \t%d" % NO_BINS 
+		FILE = open("Iris.txt", "r")
+		data = []
+		for line in FILE:
+			data.append(line)
 
-	ddata = {}
-	classes = []
+		ddata = {}
+		classes = []
 
-	for d in data[1:]:
-		ddata[d.split('\t')[-1].replace('\n', '')] = []
+		for d in data[1:]:
+			ddata[d.split('\t')[-1].replace('\n', '')] = []
 
-	classes = ddata.keys()
+		classes = ddata.keys()
 
-	for d in data[1:]:
-		d = d.split('\t')
-		ddata[d[-1].replace('\n', '')].append([float(sd) for sd in d[:-1]])
-
-	print ddata
-	print "Keys:"
-	print ddata.keys()
-	print classes
-
-	fdata = []
-	train_set = []
-	test_set = []
-	for i in range(len(ddata)):
-		fd = []
-		tr_set = []
-		ts_set = []
-		for j in range(len(ddata[ddata.keys()[i]])):
-			fd.append([i] + ddata[ddata.keys()[i]][j])
-			if j in test_indices[ddata.keys()[i]]:
-				ts_set.append([i] + ddata[ddata.keys()[i]][j])
-			else:
-				tr_set.append([i] + ddata[ddata.keys()[i]][j])
-		fdata.append(fd)
-		train_set.append(tr_set)
-		test_set.append(ts_set)
+		for d in data[1:]:
+			d = d.split('\t')
+			ddata[d[-1].replace('\n', '')].append([float(sd) for sd in d[:-1]])
 
 
-   	#save this to file for later use
-   	#first create directory Iris_Separated if it doesn't already exist
-	if os.listdir('.').count('Iris_Separated') == 0:
-		os.mkdir('Iris_Separated')
+		print "\nInput Data: "
+		print ddata
+		print "\nKeys(Classes):" + str(ddata.keys())
+		print classes
+		print "\nWriting Class,Key pair to file <class_labels.txt>..."
+		#save class names to file for later use
+		f = open('class_labels.txt', 'w')
+		for i in range(len(classes)):
+			f.writelines(str(i) + ',' + classes[i] + '\n')
+		f.close()
+		print "Done Writing!\n"
 
-	#if train and test data directories don't exist creat them
-	if os.listdir('./Iris_Separated/').count('test_data') == 0:
-		os.mkdir('Iris_Separated/test_data')
-	if os.listdir('./Iris_Separated/').count('train_data') == 0:
-		os.mkdir('Iris_Separated/train_data')
 
-	#save the separated data to file
-	#all data for a certain class of flower in Iris_Separated
-	#training and test data of each class in train_data and test_data 
-	for i in range(len(fdata)):
-		np.savetxt('./Iris_Separated/'+ddata.keys()[i]+'.txt', fdata[i], fmt='%.2f', delimiter='\t')
-		np.savetxt('./Iris_Separated/train_data/'+ddata.keys()[i]+'.txt', train_set[i], fmt='%.2f', delimiter='\t')
-		np.savetxt('./Iris_Separated/test_data/'+ddata.keys()[i]+'.txt', test_set[i], fmt='%.2f', delimiter='\t')
+		fdata = []
+		train_set = []
+		test_set = []
+		for i in range(len(ddata)):
+			fd = []
+			tr_set = []
+			ts_set = []
+			for j in range(len(ddata[ddata.keys()[i]])):
+				fd.append([i] + ddata[ddata.keys()[i]][j])
+				if j in test_indices[ddata.keys()[i]]:
+					ts_set.append([i] + ddata[ddata.keys()[i]][j])
+				else:
+					tr_set.append([i] + ddata[ddata.keys()[i]][j])
+			fdata.append(fd)
+			train_set.append(tr_set)
+			test_set.append(ts_set)
 
-	#merging the separate data
-	merged_ts = []
-	merged_tr = []
-	for i in range(len(fdata)):
-		merged_ts += test_set[i]
-		merged_tr += train_set[i]
-	
-	np.savetxt('./Iris_Separated/train_data/merged_train.txt', merged_tr, fmt='%.2f', delimiter='\t')
-	np.savetxt('./Iris_Separated/test_data/merged_test.txt', merged_ts, fmt='%.2f', delimiter='\t')
-	print merged_tr
 
-	# for i in range(len(merged_tr)):
-	# 	merged_tr[i][0] += 2
+	   	#save this to file for later use
+	   	#first create directory Iris_Separated if it doesn't already exist
+		if os.listdir('.').count('Iris_Separated') == 0:
+			os.mkdir('Iris_Separated')
 
-	binization(merged_tr)
+		#if train and test data directories don't exist creat them
+		if os.listdir('./Iris_Separated/').count('test_data') == 0:
+			os.mkdir('Iris_Separated/test_data')
+		if os.listdir('./Iris_Separated/').count('train_data') == 0:
+			os.mkdir('Iris_Separated/train_data')
+
+		#save the separated data to file
+		#all data for a certain class of flower in Iris_Separated
+		#training and test data of each class in train_data and test_data 
+		for i in range(len(fdata)):
+			np.savetxt('./Iris_Separated/'+ddata.keys()[i]+'.txt', fdata[i], fmt='%.2f', delimiter='\t')
+			np.savetxt('./Iris_Separated/train_data/'+ddata.keys()[i]+'.txt', train_set[i], fmt='%.2f', delimiter='\t')
+			np.savetxt('./Iris_Separated/test_data/'+ddata.keys()[i]+'.txt', test_set[i], fmt='%.2f', delimiter='\t')
+
+		#merging the separate data
+		merged_ts = []
+		merged_tr = []
+		for i in range(len(fdata)):
+			merged_ts += test_set[i]
+			merged_tr += train_set[i]
+		
+		np.savetxt('./Iris_Separated/train_data/merged_train.txt', merged_tr, fmt='%.2f', delimiter='\t')
+		np.savetxt('./Iris_Separated/test_data/merged_test.txt', merged_ts, fmt='%.2f', delimiter='\t')
+		print "\nTraining Data (Merged):" + str(merged_tr)
+
+		# for i in range(len(merged_tr)):
+		# 	merged_tr[i][0] += 2
+		print "\n**START BINNING**"
+		training_data = binization(merged_tr)
+		m = moses()
+		output = []
+		for i in range(len(classes)):
+			print "****************"
+			print "Training for class " + str(classes[i])
+			print "****************"
+			o = m.run(input = training_data[i], python=True, args=' -m'+str(NO_ITER))
+			output.append(o)
+			#display the highest scoring combos
+			for j in range(len(output)):
+				print "Score = %.2f  ----  combo = %s" % (o[j].score, o[j].program)
+		
+		print "TRAINING FINISHED"
+		print "\n***********************************\n"
+		#do tests on mergeed test data
+		test_data_binned = binization(merged_ts)
+		
+		for i in range(len(classes)):
+			correct_class = 0
+			incorrect_class = 0
+			TP = 0
+			FP = 0
+			FN = 0
+			TN = 0
+			for t in test_data_binned[i]:
+				result = output[i][0].eval(t[1:])
+				if result == t[0]: #correct classification
+					correct_class += 1
+					if result == 1:
+						TP += 1
+					else:
+						TN += 1
+				else:
+					incorrect_class += 1
+					if result == 1:
+						FP += 1
+					else: 
+						FN += 1
+			n_tests = correct_class + incorrect_class
+			accuracy = float(TP+TN) / (TP + TN + FP + FN)
+			activation = float(TP + FP) / (TP + TN + FP + FN)
+			precision = float(TP) / (TP + FP)
+			recall = float(TP) / (TP + FP)
+			p_and_r_hm = float(2*TP) / (2*TP + FP + FN)
+			bp = float(precision + recall) / 2
+			o_str = "\n*********************************************************\n" + \
+			"For Class : %s \n" % classes[i] + \
+			"Number of tests = %d \n" % n_tests + \
+			"Correct Classifications = %d \n" % correct_class + \
+			"Incorrect Classifications = %d \n" % incorrect_class + \
+			"Accuracy = %.2f \n" % accuracy + \
+			"Activation = %.2f \n" % activation + \
+			"Precision = %.2f \n" % precision + \
+			"Recall = %.2f \n" % recall + \
+			"Harmonic Mean(Precision and Recall) = %.2f \n" % p_and_r_hm  + \
+			"Break-even point = %.2f \n" % bp + \
+			"*********************************************************\n"
+			print o_str
+			if os.listdir('.').count('Test_Results') == 0:
+				os.mkdir('Test_Results')
+			o_f = file('Test_Results/Test_'+str(classes[i])+'.txt', 'w')
+			o_f.writelines(o_str)
