@@ -1,0 +1,13 @@
+
+*********************************************************
+For Class : Iris-virginica 
+Number of tests = 51 
+Correct Classifications = 49 
+Incorrect Classifications = 2 
+Accuracy = 0.96 
+Activation = 0.33 
+Precision = 0.94 
+Recall = 0.94 
+Harmonic Mean(Precision and Recall) = 0.94 
+Break-even point = 0.94 
+*********************************************************
