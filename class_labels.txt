@@ -1,3 +1,0 @@
-0,Iris-virginica
-1,Iris-setosa
-2,Iris-versicolor
