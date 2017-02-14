@@ -1,0 +1,13 @@
+
+*********************************************************
+For Class : Iris-setosa 
+Number of tests = 51 
+Correct Classifications = 51 
+Incorrect Classifications = 0 
+Accuracy = 1.00 
+Activation = 0.33 
+Precision = 1.00 
+Recall = 1.00 
+Harmonic Mean(Precision and Recall) = 1.00 
+Break-even point = 1.00 
+*********************************************************
