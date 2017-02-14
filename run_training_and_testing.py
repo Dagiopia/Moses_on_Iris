@@ -15,7 +15,14 @@ Test set indexes for Iris-setosa: 20,34,30,28,32,26,0,5,4,15,24,45,19,33,47,46,1
 Test set indexes for Iris-versicolor: 10,12,27,9,43,19,6,31,3,46,18,21,24,44,11,14,35
 Test set indexes for Iris-virginica: 27,31,4,48,32,13,46,24,45,20,26,44,38,34,49,5,12
 
+These list of indices are used to pick out the test set after training has been done 
+for the rest of the data.
+
 '''
+
+
+
+
 
 test_indices = {"Iris-setosa" : [20,34,30,28,32,26,0,5,4,15,24,45,19,33,47,46,13],
 "Iris-versicolor" : [10,12,27,9,43,19,6,31,3,46,18,21,24,44,11,14,35], 
@@ -25,6 +32,7 @@ NO_BINS = 6
 NO_FEATURES = 4
 NO_ITER = 20000
 classes = []
+PRINT_ANNOYINGLY_TOO_MUCH = False
 
 def binization(data):
 	'''
@@ -110,10 +118,11 @@ def binization(data):
 		maxs.append(max(dt[i]))
 		mins.append(min(dt[i]))
 	#maxs is right - verified
-	print "Max of each category:"
-	print maxs
-	print "Min of each category:"
-	print mins
+	if PRINT_ANNOYINGLY_TOO_MUCH:
+		print "Max of each category:"
+		print maxs
+		print "Min of each category:"
+		print mins
 
 	bin_dic = []
 	for j in range(width):
@@ -122,7 +131,8 @@ def binization(data):
 			t_dic.append(mins[j] + ((maxs[j] - mins[j]) / float(NO_BINS))*i)
 		bin_dic.append(t_dic)
 
-	print "\nBin Ranges: \n" + str(bin_dic).replace('], ', '],\n')
+	if PRINT_ANNOYINGLY_TOO_MUCH:
+		print "\nBin Ranges: \n" + str(bin_dic).replace('], ', '],\n')
 	#print bin_dic[0]
 
 	#start binization
@@ -137,7 +147,10 @@ def binization(data):
 				bin_no += 1
 			d[i] = bin_no
 		n_data.append(d)
-	print n_data
+	
+	if PRINT_ANNOYINGLY_TOO_MUCH:
+		print n_data
+
 	np.savetxt('binized_iris.csv', n_data, fmt='%d', delimiter=',')
 
 	ex_data = [] #expanded bin (in the form [0, 0, 0, 1 ....])
@@ -156,21 +169,37 @@ def binization(data):
 		ex_data.append(cc)
 		np.savetxt('good_binned_class_'+classes[c]+'.csv', cc, fmt='%d', delimiter=',')
 
-	print "---------------------------------"
-	print "Binned: \n" + str(ex_data)
-	print "---------------------------------"
+	if PRINT_ANNOYINGLY_TOO_MUCH:
+		print "---------------------------------"
+		print "Binned: \n" + str(ex_data)
+		print "---------------------------------"
+
 	return ex_data
 
 
+def eval_voting(o, data):
+	result = []
+	for i in  range(len(o)):
+		result.append(o[i].eval(data))
+
+	return 0 if result.count(0) > result.count(1) else 1
 
 
 
 
 
 if __name__ == "__main__":
+	st_time = time.time()
 	if len(sys.argv) == 2:
 		NO_BINS = int(sys.argv[1])
-		#NO_ITER = int(sys.argv[2])
+	if len(sys.argv) == 3:
+		NO_BINS = int(sys.argv[1])
+		NO_ITER = int(sys.argv[2])
+		if NO_BINS > 15:
+			print "Come on! That's probably too much."
+			NO_BINS = 6
+		if NO_ITER > 500000 or NO_ITER < 10:
+			print "Iteration is too out of range!"
 	print "**STARTING PROGRAM**"
 	print "Time: %s" % time.ctime(time.time())
 	print "Number of Iterations = \t%d" % NO_ITER
@@ -193,17 +222,20 @@ if __name__ == "__main__":
 		ddata[d[-1].replace('\n', '')].append([float(sd) for sd in d[:-1]])
 
 
-	print "\nInput Data: "
-	print ddata
-	print "\nKeys(Classes):" + str(ddata.keys())
-	print classes
-	print "\nWriting Class,Key pair to file <class_labels.txt>..."
+	if PRINT_ANNOYINGLY_TOO_MUCH:
+		print "\nInput Data: "
+		print ddata
+		print "\nKeys(Classes):" + str(ddata.keys())
+		print classes
+		print "\nWriting Class,Key pair to file <class_labels.txt>..."
 	#save class names to file for later use
 	f = open('class_labels.txt', 'w')
 	for i in range(len(classes)):
 		f.writelines(str(i) + ',' + classes[i] + '\n')
 	f.close()
-	print "Done Writing!\n"
+	
+	if PRINT_ANNOYINGLY_TOO_MUCH:
+		print "Done Writing!\n"
 
 
 	fdata = []
@@ -252,12 +284,15 @@ if __name__ == "__main__":
 	
 	np.savetxt('./Iris_Separated/train_data/merged_train.txt', merged_tr, fmt='%.2f', delimiter='\t')
 	np.savetxt('./Iris_Separated/test_data/merged_test.txt', merged_ts, fmt='%.2f', delimiter='\t')
-	print "\nTraining Data (Merged):" + str(merged_tr)
+	
+	if PRINT_ANNOYINGLY_TOO_MUCH:
+		print "\nTraining Data (Merged):" + str(merged_tr)
 
 	# for i in range(len(merged_tr)):
 	# 	merged_tr[i][0] += 2
 	print "\n**START BINNING**"
 	training_data = binization(merged_tr)
+	print "**FINISHED BINNING**"
 	m = moses()
 	output = []
 	for i in range(len(classes)):
@@ -272,9 +307,11 @@ if __name__ == "__main__":
 	
 	print "TRAINING FINISHED"
 	print "\n***********************************\n"
-	#do tests on mergeed test data
-	test_data_binned = binization(merged_ts)
 	
+	
+	#do tests on mergeed test data
+	print "START TESTING"
+	test_data_binned = binization(merged_ts)
 	for i in range(len(classes)):
 		correct_class = 0
 		incorrect_class = 0
@@ -283,7 +320,7 @@ if __name__ == "__main__":
 		FN = 0
 		TN = 0
 		for t in test_data_binned[i]:
-			result = output[i][0].eval(t[1:])
+			result = eval_voting(output[i], t[1:])
 			if result == t[0]: #correct classification
 				correct_class += 1
 				if result == 1:

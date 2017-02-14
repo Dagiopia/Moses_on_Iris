@@ -1,0 +1,47 @@
+This is a classification problem for the different Iris* flowers out there. 
+The problem is to classify/predict which flower it is from the set of features 
+each observation has. 
+In the file Iris.txt, there are three flowers; each with with their own set of 4 
+features. There are 50 observations for each of the flowers.
+
+The program run_training_and_testing.py first reads all the data from the Iris.txt 
+file and devides it into training and testing where 33 of the 50 of each flower is 
+for training and the rest 17 is for testing.
+
+The indices selected for testing are..
+Test set indexes for Iris-setosa: 20,34,30,28,32,26,0,5,4,15,24,45,19,33,47,46,13
+Test set indexes for Iris-versicolor: 10,12,27,9,43,19,6,31,3,46,18,21,24,44,11,14,35
+Test set indexes for Iris-virginica: 27,31,4,48,32,13,46,24,45,20,26,44,38,34,49,5,12
+
+The training data is all the data minus the above indices. 
+
+After deviding up the data into train/test sets then the training set is binned 
+by the amount set to NO_BINS.
+How the binning is done is commented inside the function that does it. 
+
+After binning, moses is trained with the training data with the NO_ITER number of
+iterations and the output set to Python Mode.
+After training, all the top scoring programs are iterated over and the test data is
+evaluated on them. During each evaluation, voting is performed (i.e. if moses returns
+more than one high scoring but different programs, each one is allowed to evaluate the
+data and the majority of their results is taken to the final prediction.)
+
+During each evaluation (after voting) the final result is compared with the true value.
+For each test, True Positive (TP), True Negative (TN), False Positive (FP) and 
+False Negative(FN) are obtained. These are used to calculate Accuracy, Precision, Actiation 
+and Recall according to the moses manual. 
+
+
+When the program is about to finish, it displays its results and saves them in three separate
+files for each flower. 
+
+To run the script, 
+	python run_training_and_testing.py
+
+You need to install 
+	Python 2.7
+	Moses (github.com/opencog/moses.git)
+
+
+Dagim Sisay
+February, 2017
