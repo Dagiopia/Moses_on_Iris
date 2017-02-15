@@ -34,9 +34,9 @@ NO_ITER = 20000
 classes = []
 PRINT_ANNOYINGLY_TOO_MUCH = False
 
-def binization(data):
+def binization(data, alter_class_label=True):
 	'''
-	How the binerization works
+	How the binning works
 		First, the maximum of all features is collected into a list maxs[].
 		To collect the maximums, the data which is col=features and row=observations
 		is transposed and by iterating over the values of each feature the max
@@ -159,7 +159,8 @@ def binization(data):
 		for n in n_data:
 			m = list(n)
 			e_x_m = []
-			m[0] = 1 if m[0] == c else 0
+			if alter_class_label:
+				m[0] = 1 if m[0] == c else 0
 			e_x_m.append(m[0])
 			for i in range(NO_BINS*NO_FEATURES):
 				e_x_m.append(0)
@@ -177,14 +178,25 @@ def binization(data):
 	return ex_data
 
 
-def eval_voting(o, data):
+
+def single_class_voting(model, data):
 	result = []
-	for i in  range(len(o)):
-		result.append(o[i].eval(data))
+	for i in  range(len(model)):
+		result.append(model[i].eval(data))
 
 	return 0 if result.count(0) > result.count(1) else 1
 
 
+
+def multi_class_voting(model, data):
+	result = []
+	for m in model:
+		result.append(single_class_voting(m, data))
+	if PRINT_ANNOYINGLY_TOO_MUCH:
+		print "All Classes Result: %s" % str(result)
+	if result.count(1) != 0:	
+		return result.index(1)
+	return -1
 
 
 
@@ -320,7 +332,7 @@ if __name__ == "__main__":
 		FN = 0
 		TN = 0
 		for t in test_data_binned[i]:
-			result = eval_voting(output[i], t[1:])
+			result = single_class_voting(output[i], t[1:])
 			if result == t[0]: #correct classification
 				correct_class += 1
 				if result == 1:
@@ -357,3 +369,44 @@ if __name__ == "__main__":
 			os.mkdir('Test_Results')
 		o_f = file('Test_Results/Test_'+str(classes[i])+'.txt', 'w')
 		o_f.writelines(o_str)
+		
+
+
+
+
+	print "\n\n----------------------------------------------------\n"
+	print "START TESTING FOR MULTI-CLASS CLASSIFICATION"
+	print "\n----------------------------------------------------\n\n"
+	test_data_binned = binization(merged_ts, alter_class_label=False)[0]
+	if PRINT_ANNOYINGLY_TOO_MUCH:
+		print "Testing Data = "
+		print "class_name \t features..."
+		for t in test_data_binned:
+			print str(t[0]) + " \t " + str(t[1:])
+	correct_class = 0
+	incorrect_class = 0
+	unknown = 0
+	print "Predictions:"
+	for t in test_data_binned:
+		result = multi_class_voting(output, t[1:])
+		if result == t[0]:
+			#print "Correct!"
+			correct_class += 1
+		elif result == -1:
+			#print "I don't Know!!"
+			unknown += 1
+		else:
+			#print "Incorrect!!"
+			incorrect_class += 1
+
+	n_tests = correct_class + incorrect_class + unknown
+	accuracy = float(correct_class) / n_tests
+	o_str = "\n*********************************************************\n" + \
+	"Number of tests = %d \n" % n_tests + \
+	"Correct Classifications = %d \n" % correct_class + \
+	"Incorrect Classifications = %d \n" % incorrect_class + \
+	"Unknown Classifications = %d \b" % unknown
+	"Accuracy = %.2f \n" % (accuracy*100) + \
+	"*********************************************************\n"
+	print o_str
+	
